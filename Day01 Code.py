@@ -1,5 +1,5 @@
 from collections import Counter
-
+#part 1
 def calculate_similarity_score(file):
     # Read the file and split into left and right lists
     with open("input.txt", "r") as file:
