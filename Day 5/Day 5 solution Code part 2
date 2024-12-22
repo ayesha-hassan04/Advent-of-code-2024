@@ -1,0 +1,62 @@
+from collections import defaultdict, deque
+
+# Function to parse the input file
+def parse_input(filename):
+    with open(filename, 'r') as file:
+        content = file.read()
+    rules_section, updates_section = content.strip().split("\n\n")
+    
+    rules = [tuple(map(int, rule.split("|"))) for rule in rules_section.splitlines()]
+    updates = [list(map(int, update.split(","))) for update in updates_section.splitlines()]
+    
+    return rules, updates
+
+# Function to sort an update based on the rules
+def sort_update(update, rules):
+    # Build a graph of dependencies and an in-degree counter
+    graph = defaultdict(list)
+    in_degree = defaultdict(int)
+    update_set = set(update)
+    
+    for x, y in rules:
+        if x in update_set and y in update_set:
+            graph[x].append(y)
+            in_degree[y] += 1
+    
+    # Add nodes with no incoming edges to the queue
+    queue = deque([node for node in update if in_degree[node] == 0])
+    sorted_update = []
+    
+    while queue:
+        node = queue.popleft()
+        sorted_update.append(node)
+        for neighbor in graph[node]:
+            in_degree[neighbor] -= 1
+            if in_degree[neighbor] == 0:
+                queue.append(neighbor)
+    
+    return sorted_update
+
+# Function to find the middle page of an update
+def find_middle_page(update):
+    return update[len(update) // 2]
+
+# Function to process the updates and fix incorrect ones
+def fix_updates(filename):
+    rules, updates = parse_input(filename)
+    
+    incorrect_updates = []
+    for update in updates:
+        # Check if update is already sorted
+        sorted_update = sort_update(update, rules)
+        if sorted_update != update:
+            incorrect_updates.append(sorted_update)
+    
+    # Find the middle page of each corrected update and calculate the total
+    total = sum(find_middle_page(update) for update in incorrect_updates)
+    return total
+
+# Main execution
+file_name = "input05.txt"
+result = fix_updates(file_name)
+print("The sum of the middle pages of correctly ordered updates is:", result)
