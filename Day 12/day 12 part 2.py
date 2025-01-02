@@ -142,6 +142,6 @@ def calculate_total_area_and_perimeter(input_file):
     return total
 
 # Example usage:
-input_file = 'input.txt'  # Specify the path to your input file
+input_file = 'input12.txt'  # Specify the path to your input file
 total = calculate_total_area_and_perimeter(input_file)
 print(total)

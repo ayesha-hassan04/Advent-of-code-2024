@@ -1,94 +1,38 @@
-def parse_disk_map(disk_map):
-    """
-    Parse the disk map into a list of file and free space segments.
-    
-    Args:
-        disk_map (str): The disk map string.
+from collections import deque
 
-    Returns:
-        list of tuples: A list where each tuple contains the length of a file or free space segment
-                        and a boolean indicating if it is a file (True for file, False for free space).
-    """
-    segments = []
-    for i in range(len(disk_map)):
-        length = int(disk_map[i])
-        is_file = (i % 2 == 0)
-        segments.append((length, is_file))
-    return segments
+with open('input09.txt') as f:
+    rawinput = f.read().strip()  # Strip any trailing whitespace or newline characters
 
-def generate_initial_layout(segments):
-    """
-    Generate the initial disk layout as a string representation.
+lengths = [int(num) for num in rawinput if num.isdigit()]  # Filter out non-digit characters
 
-    Args:
-        segments (list of tuples): The parsed disk segments.
+filled_grid = deque()
+moved_grid = deque()
+gaps = deque()
 
-    Returns:
-        str: The initial layout of the disk.
-    """
-    layout = []
-    file_id = 0
-    for length, is_file in segments:
-        if is_file:
-            layout.extend([str(file_id)] * length)
-            file_id += 1
-        else:
-            layout.extend(['.'] * length)
-    return ''.join(layout)
+cur_pos = 0
+for i, num in enumerate(lengths):
+    if i % 2 == 0:
+        filled_grid.append([i // 2, cur_pos, num])
+    else:
+        if num > 0:
+            gaps.append([cur_pos, num])
+    cur_pos += num
 
-def compact_disk(layout):
-    """
-    Compact the disk layout by moving file blocks to the leftmost free spaces.
+while True:
+    gap_pos, gap_len = gaps.popleft()
+    file_id, file_pos, file_len = filled_grid.pop()
+    if gap_pos > file_pos:
+        filled_grid.append([file_id, file_pos, file_len])
+        break
+    if gap_len > file_len:
+        moved_grid.append([file_id, gap_pos, file_len])
+        gaps.appendleft([gap_pos + file_len, gap_len - file_len])
+    elif gap_len == file_len:
+        moved_grid.append([file_id, gap_pos, file_len])
+    else:
+        moved_grid.append([file_id, gap_pos, gap_len])
+        filled_grid.append([file_id, file_pos, file_len - gap_len])
 
-    Args:
-        layout (str): The current disk layout.
-
-    Returns:
-        str: The compacted disk layout.
-    """
-    layout = list(layout)
-    left = 0
-    for right in range(len(layout)):
-        if layout[right] != '.':
-            while layout[left] != '.' and left < right:
-                left += 1
-            if left < right:
-                layout[left], layout[right] = layout[right], '.'
-                left += 1
-    return ''.join(layout)
-
-def calculate_checksum(layout):
-    """
-    Calculate the checksum of the disk layout.
-
-    Args:
-        layout (str): The compacted disk layout.
-
-    Returns:
-        int: The checksum of the layout.
-    """
-    checksum = 0
-    for position, block in enumerate(layout):
-        if block != '.':
-            checksum += position * int(block)
-    return checksum
-
-def main():
-    # Read the input from the file "input09.txt"
-    with open("input09.txt", "r") as file:
-        puzzle_input = file.read().strip()
-
-    # Parse the input and generate the initial layout.
-    segments = parse_disk_map(puzzle_input)
-    initial_layout = generate_initial_layout(segments)
-
-    # Compact the disk and calculate the checksum.
-    compacted_layout = compact_disk(initial_layout)
-    checksum = calculate_checksum(compacted_layout)
-
-    print("Initial layout:", initial_layout)
-    print("Compacted layout:", compacted_layout)
-    print("Checksum:", checksum)
-
-if __name__ == "__main__":
-    main()
+final_grid = filled_grid + moved_grid
+answer = sum(num * (start * length + (length * (length - 1)) // 2) for num, start, length in final_grid)  # (start) + (start+1) + ... + (start+length-1)
+print(answer)
